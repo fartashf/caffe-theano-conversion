@@ -1,0 +1,71 @@
+diff --git a/pylearn2/sandbox/cuda_convnet/base_acts.py b/pylearn2/sandbox/cuda_convnet/base_acts.py
+index 33da583..0de666d 100644
+--- a/pylearn2/sandbox/cuda_convnet/base_acts.py
++++ b/pylearn2/sandbox/cuda_convnet/base_acts.py
+@@ -61,7 +61,7 @@ class BaseActs(GpuOp):
+     """
+     Shared code for wrapping various convnet operations.
+     """
+-    def __init__(self, pad=0, partial_sum=None, stride=1):
++    def __init__(self, pad=0, partial_sum=None, stride=1, numGroups=1):
+ 
+         if not isinstance(pad, py_integer_types):
+             raise TypeError("pad must be an int")
+@@ -74,7 +74,11 @@ class BaseActs(GpuOp):
+         self.stride = stride
+         self.copy_non_contiguous = 0
+         # TODO: support sparse connectivity pattern
+-        self.dense_connectivity = True
++        if numGroups == 1:
++            self.dense_connectivity = True
++        else:
++            self.dense_connectivity = False
++        self.numGroups = numGroups
+ 
+     def c_header_dirs(self):
+         if config.pthreads.inc_dir:
+diff --git a/pylearn2/sandbox/cuda_convnet/filter_acts.py b/pylearn2/sandbox/cuda_convnet/filter_acts.py
+index bb63ad3..5014225 100644
+--- a/pylearn2/sandbox/cuda_convnet/filter_acts.py
++++ b/pylearn2/sandbox/cuda_convnet/filter_acts.py
+@@ -160,6 +160,10 @@ class FilterActs(BaseActs):
+             basic_setup += """
+             #define numGroups 1
+             """
++        else:
++            basic_setup += """
++            #define numGroups %s
++            """ % self.numGroups
+ 
+         assert isinstance(self.pad, py_integer_types)
+         assert self.pad >= 0, "pad must be non-negative"
+diff --git a/pylearn2/sandbox/cuda_convnet/img_acts.py b/pylearn2/sandbox/cuda_convnet/img_acts.py
+index 1a4116f..0a6ba37 100644
+--- a/pylearn2/sandbox/cuda_convnet/img_acts.py
++++ b/pylearn2/sandbox/cuda_convnet/img_acts.py
+@@ -208,6 +208,10 @@ class ImageActs(BaseActs):
+             basic_setup += """
+             #define numGroups 1
+             """
++        else:
++            basic_setup += """
++            #define numGroups %s
++            """ % self.numGroups
+ 
+         basic_setup += """
+         #define paddingStart (-%d)
+diff --git a/pylearn2/sandbox/cuda_convnet/weight_acts.py b/pylearn2/sandbox/cuda_convnet/weight_acts.py
+index 8bf1529..101fb96 100644
+--- a/pylearn2/sandbox/cuda_convnet/weight_acts.py
++++ b/pylearn2/sandbox/cuda_convnet/weight_acts.py
+@@ -180,6 +180,10 @@ class WeightActs(BaseActs):
+             basic_setup += """
+             #define numGroups 1
+             """
++        else:
++            basic_setup += """
++            #define numGroups %s
++            """ % self.numGroups
+ 
+         basic_setup += """
+         #define paddingStart (-%(pad)d)
