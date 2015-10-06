@@ -30,7 +30,7 @@ class BaseModel(object):
 		# save input, last layer
 		# currently assumed that all_layers[-1] will be input (this is how it should be, i think, but edge cases might exist)
 		self.last_layer = last_layer
-		self.input_layer = self.all_layers[-1]
+		self.input_layer = self.all_layers[0]
 		self.compile_kwargs = compile_kwargs
 		self.compile(**compile_kwargs)
 
@@ -46,7 +46,7 @@ class BaseModel(object):
 		# get symbolic input from layer
 		symbolic_input = self.input_layer.input_var
 		# make list of outputs
-		outputs = [lay.get_output() for lay in self.all_layers[:nOutputs]]
+		outputs = [lasagne.layers.get_output(lay) for lay in self.all_layers[-nOutputs:]]
 		# store function in self.forward
 		self.forward = theano.function([symbolic_input], outputs)
 

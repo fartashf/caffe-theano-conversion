@@ -101,7 +101,7 @@ def convert_trained_caffemodel(lasagne_model, caffemodel, prototxt='', caffe_par
 		layer_params = parse_from_protobuf.parse_caffemodel(caffemodel)
 
 	# this should be in the same order as was made by the lasagne model, but reversed. we will check that.
-	# todo: maybe just go by names, strictly? 
+	# todo: maybe just go by names, strictly?
 	for lasagne_layer in lasagne_model.all_layers:
 		if len(lasagne_layer.get_params()) == 0:
 			# no params to set
@@ -126,6 +126,7 @@ def convert_model_def(prototxt):
 	'''
 	name, inp, architecture = parse_model_def(prototxt)
 	inp_name, inp_dims = inp
+	inp_dims = inp_dims[0].dim
 
 	last_layer = inp_layer = layers.InputLayer(tuple(inp_dims), name=inp_name)
 	# now go through all layers and create the lasagne equivalent
@@ -219,14 +220,14 @@ def cuda_conv_layer(layer, last_layer):
 
 	num_filters = param.num_output
 	filter_size = (param.kernel_size,param.kernel_size) #only suppose square filters
-	strides = (param.stride,param.stride) # can only suport square strides anyways
+	stride = (param.stride,param.stride) # can only suport square stride anyways
 	## border mode is wierd...
 	border_mode = None
 	pad = param.pad
 	nonlinearity=nonlinearities.identity
 	groups= param.group
-			
-	conv = extra_convnet_layers.CaffeConv2DCCLayer(last_layer, groups=groups, num_filters=num_filters,filter_size=filter_size, strides=strides, border_mode=border_mode, pad=pad, nonlinearity=nonlinearity,name=name)
+
+	conv = extra_convnet_layers.CaffeConv2DCCLayer(last_layer, groups=groups, num_filters=num_filters,filter_size=filter_size, stride=stride, border_mode=border_mode, pad=pad, nonlinearity=nonlinearity,name=name)
 	return conv
 
 def conv_layer(layer, last_layer):
@@ -234,7 +235,7 @@ def conv_layer(layer, last_layer):
 	param = layer.convolution_param
 	num_filters = param.num_output
 	filter_size = (param.kernel_size, param.kernel_size)
-	strides = (param.stride, param.stride)
+	stride = (param.stride, param.stride)
 	group = param.group
 	pad = param.pad
 	nonlinearity=nonlinearities.identity
@@ -250,9 +251,9 @@ def conv_layer(layer, last_layer):
 		print "pretty sure this won't work but we'll try a full conv"
 		border_mode = 'full'
 	if group > 1:
-		conv = extra_layers.CaffeConv2DLayer(last_layer, group=group,num_filters=num_filters, filter_size=filter_size, strides=strides, border_mode=border_mode, nonlinearity=nonlinearity,name=name)
+		conv = extra_layers.CaffeConv2DLayer(last_layer, group=group,num_filters=num_filters, filter_size=filter_size, stride=stride, border_mode=border_mode, nonlinearity=nonlinearity,name=name)
 	else:
-		conv = layers.Conv2DLayer(last_layer, num_filters=num_filters, filter_size=filter_size, strides=strides, border_mode=border_mode, nonlinearity=nonlinearity,name=name)
+		conv = layers.Conv2DLayer(last_layer, num_filters=num_filters, filter_size=filter_size, stride=stride, border_mode=border_mode, nonlinearity=nonlinearity,name=name)
 	return conv
 
 def relu_layer(layer, last_layer):
@@ -263,21 +264,21 @@ def pooling_layer(layer, last_layer):
 	name = layer.name
 	param = layer.pooling_param
 	ds=(param.kernel_size,param.kernel_size) #caffe only does square kernels
-	strides = (param.stride, param.stride)
+	stride = (param.stride, param.stride)
 
-	if strides[0] != ds[0]:
-		pool = extra_layers.CaffeMaxPool2DLayer(last_layer,ds=ds, strides=strides,name=name)
+	if stride[0] != ds[0]:
+		pool = extra_layers.CaffeMaxPool2DLayer(last_layer,ds=ds, stride=stride,name=name)
 	else:
-		pool = layers.MaxPool2DLayer(last_layer, ds=ds,name=name) # ignore border is set to False, maybe look into how caffe does borders if the strides don't work perfectly
+		pool = layers.MaxPool2DLayer(last_layer, ds=ds,name=name) # ignore border is set to False, maybe look into how caffe does borders if the stride don't work perfectly
 	return pool
 
 def cuda_pooling_layer(layer, last_layer):
 	name = layer.name
 	param = layer.pooling_param
 	ds=(param.kernel_size,param.kernel_size) #caffe only does square kernels
-	strides = (param.stride, param.stride)
+	stride = (param.stride, param.stride)
 
-	pool = cuda_convnet.MaxPool2DCCLayer(last_layer, ds=ds, strides=strides,name=name)
+	pool = cuda_convnet.MaxPool2DCCLayer(last_layer, pool_size=ds, stride=stride,name=name)
 	return pool
 
 def ip_layer(layer, last_layer):
@@ -316,7 +317,7 @@ def convert_trained_caffemodel(lasagne_model, caffemodel, prototxt='', caffe_par
 		layer_params = parse_from_protobuf.parse_caffemodel(caffemodel)
 
 	# this should be in the same order as was made by the lasagne model, but reversed. we will check that.
-	# todo: maybe just go by names, strictly? 
+	# todo: maybe just go by names, strictly?
 	for lasagne_layer in lasagne_model.all_layers:
 		if len(lasagne_layer.get_params()) == 0:
 			# no params to set
