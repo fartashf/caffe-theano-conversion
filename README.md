@@ -16,6 +16,20 @@ You can also load in a mean file using conversion's convert_mean_file function. 
 
 Right now, you have to put the cost layer on yourself, as well as do the backprop code. This is a future step for me, however, Lasagne is very easy to use and you can learn how to add your own stuff very easily. I want to keep this as configurable as possible because that's the benefit of theano.
 
+## Quick Installation
+```
+git clone https://github.com/fartashf/caffe-theano-conversion
+pip install --user --upgrade --no-deps git+git://github.com/Theano/Theano.git
+git clone git://github.com/lisa-lab/pylearn2.git
+cd pylearn2
+<make changes>
+python setup.py develop --user
+pip install --user --upgrade
+https://github.com/Lasagne/Lasagne/archive/master.zip
+THEANO_FLAGS=device=gpu1 python -c "import theano; print
+theano.sandbox.cuda.device_properties(0)"
+```
+
 ## DEPENDENCIES:
 Theano (http://deeplearning.net/software/theano/) needs to be bleeding-edge:
 ```
