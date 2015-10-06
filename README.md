@@ -22,7 +22,7 @@ git clone https://github.com/fartashf/caffe-theano-conversion
 pip install --user --upgrade --no-deps git+git://github.com/Theano/Theano.git
 git clone git://github.com/lisa-lab/pylearn2.git
 cd pylearn2
-<make changes>
+patch -p1 < <caffe-theano-conversion_path>/pylearn2.patch
 python setup.py develop --user
 pip install --user --upgrade
 https://github.com/Lasagne/Lasagne/archive/master.zip
